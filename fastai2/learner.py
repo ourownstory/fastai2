@@ -64,8 +64,8 @@ _after_epoch  = [event.after_epoch, event.after_fit]
 class Learner():
     def __init__(self, dls, model, loss_func=None, opt_func=Adam, lr=defaults.lr, splitter=trainable_params, cbs=None,
                  metrics=None, path=None, model_dir='models', wd=None, wd_bn_bias=False, train_bn=True,
-                 moms=(0.95,0.85,0.95)):
-        store_attr(self, "dls,model,opt_func,lr,splitter,model_dir,wd,wd_bn_bias,train_bn,metrics,moms")
+                 moms=(0.95,0.85,0.95), reg_func=None):
+        store_attr(self, "dls,model,opt_func,lr,splitter,model_dir,wd,wd_bn_bias,train_bn,metrics,moms,reg_func")
         self.training,self.create_mbar,self.logger,self.opt,self.cbs = False,True,print,None,L()
         if loss_func is None:
             loss_func = getattr(dls.train_ds, 'loss_func', None)
@@ -134,6 +134,7 @@ class Learner():
             if len(self.yb) == 0: return
             self.loss = self.loss_func(self.pred, *self.yb); self('after_loss')
             if not self.training: return
+            if self.reg_func is not None: self.loss += self.reg_func(self.model) #; self('after_reg')
             self.loss.backward();                            self('after_backward')
             self.opt.step();                                 self('after_step')
             self.opt.zero_grad()
